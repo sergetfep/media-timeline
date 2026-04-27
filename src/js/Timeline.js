@@ -24,7 +24,8 @@ export default class Timeline {
 
     const hint = document.createElement('p');
     hint.className = 'timeline__hint';
-    hint.textContent = 'Введите текст записи и нажмите Enter. Для переноса строки используйте Shift + Enter.';
+    hint.textContent =
+      'Введите текст записи и нажмите Enter. Для переноса строки используйте Shift + Enter.';
 
     this.list = document.createElement('div');
     this.list.className = 'timeline__list';
@@ -60,7 +61,8 @@ export default class Timeline {
 
     const text = document.createElement('p');
     text.className = 'modal__text';
-    text.textContent = 'Не удалось определить ваше местоположение. Укажите координаты вручную.';
+    text.textContent =
+      'Не удалось определить ваше местоположение. Укажите координаты вручную.';
 
     this.modalForm = document.createElement('form');
     this.modalForm.className = 'modal__form';
@@ -97,8 +99,12 @@ export default class Timeline {
   }
 
   bindEvents() {
-    this.input.addEventListener('keydown', (event) => this.handleInputKeydown(event));
-    this.modalForm.addEventListener('submit', (event) => this.handleManualSubmit(event));
+    this.input.addEventListener('keydown', (event) =>
+      this.handleInputKeydown(event),
+    );
+    this.modalForm.addEventListener('submit', (event) =>
+      this.handleManualSubmit(event),
+    );
     this.cancelButton.addEventListener('click', () => this.closeModal());
 
     this.overlay.addEventListener('click', (event) => {
@@ -108,7 +114,10 @@ export default class Timeline {
     });
 
     document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && this.overlay.classList.contains('modal_open')) {
+      if (
+        event.key === 'Escape' &&
+        this.overlay.classList.contains('modal_open')
+      ) {
         this.closeModal();
       }
     });
@@ -144,20 +153,33 @@ export default class Timeline {
         return;
       }
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-        () => reject(new Error('Could not get current position')),
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0,
-        },
-      );
+      const options = {
+        enableHighAccuracy: false,
+        timeout: 30000,
+        maximumAge: 300000,
+      };
+
+      const requestPosition = (attempt = 1) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+          },
+          (error) => {
+            if (attempt < 3) {
+              window.setTimeout(() => requestPosition(attempt + 1), 500);
+              return;
+            }
+
+            reject(error);
+          },
+          options,
+        );
+      };
+
+      requestPosition();
     });
   }
 
